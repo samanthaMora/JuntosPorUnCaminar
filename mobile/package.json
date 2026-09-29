@@ -37,7 +37,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "deploy:web": "expo export -p web && npx eas-cli@latest deploy --prod"
   },
   "private": true
 }

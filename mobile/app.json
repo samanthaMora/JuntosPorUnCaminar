@@ -44,8 +44,7 @@
     ],
     "scheme": "citas",
     "experiments": {
-      "typedRoutes": true,
-      "baseUrl": "/JuntosPorUnCaminar"
+      "typedRoutes": true
     }
   }
 }

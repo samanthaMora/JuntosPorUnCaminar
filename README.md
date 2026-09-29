@@ -146,14 +146,16 @@ Prueba sugerida:
 5. En el Dashboard de Stripe verás el pago, la transferencia a la cuenta conectada y tu comisión.
 
 ### 6. Versión web
-Para probarla en tu computadora: `npx expo start --web` dentro de `mobile/` y abre http://localhost:8081/JuntosPorUnCaminar.
+Para probarla en tu computadora: `npx expo start --web` dentro de `mobile/` y abre http://localhost:8081.
 
-Se publica sola en GitHub Pages con cada push a `main` ([.github/workflows/deploy-web.yml](.github/workflows/deploy-web.yml)). Solo la primera vez:
-1. En el repo, *Settings → Pages → Source*: elige **GitHub Actions**.
-2. En *Settings → Secrets and variables → Actions → Variables*, crea `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` y `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (son valores públicos, los mismos de `.env.local`).
-3. En Supabase, *Authentication → URL Configuration*, agrega `https://samanthamora.github.io/JuntosPorUnCaminar` a las URLs permitidas.
+Para publicarla en internet con [EAS Hosting](https://docs.expo.dev/eas/hosting/introduction/) (necesitas una cuenta gratis en expo.dev y el `.env.local` lleno):
+```bash
+cd mobile
+npm run deploy:web
+```
+La primera vez pide iniciar sesión y elegir un nombre; al final muestra la dirección (`https://NOMBRE.expo.app`). Agrega esa dirección en Supabase, en *Authentication → URL Configuration*, para que funcione el inicio de sesión.
 
-Queda en https://samanthamora.github.io/JuntosPorUnCaminar. En web el pago se hace con el formulario de Stripe y no hay notificaciones push (esas solo llegan a la app del teléfono).
+En web el pago se hace con el formulario de Stripe y no hay notificaciones push (esas solo llegan a la app del teléfono).
 
 ## Pendiente antes de producción
 
