@@ -7,6 +7,25 @@ import { syncPayoutAccount } from '../_shared/connect.ts';
 
 const RETURN_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/connect-return`;
 
+// Stripe ya no permite crear cuentas conectadas con Accounts v1 y el SDK aún no
+// trae Accounts v2. Las cuentas v2 siguen funcionando con los endpoints v1
+// (consultar, panel de Express, cobros y webhook account.updated).
+async function stripeV2<T>(path: string, body: unknown, idempotencyKey?: string): Promise<T> {
+  const res = await fetch(`https://api.stripe.com${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`,
+      'Stripe-Version': '2026-08-26.dahlia',
+      'Content-Type': 'application/json',
+      ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }),
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? 'Error con Stripe');
+  return data as T;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
@@ -31,24 +50,26 @@ Deno.serve(async (req) => {
       if (!accountId) {
         // Equivalente a una cuenta Express: Stripe hace la verificación de
         // identidad y el doctor tiene un panel sencillo para ver sus depósitos.
-        const account = await stripe.accounts.create(
+        const account = await stripeV2<{ id: string }>(
+          '/v2/core/accounts',
           {
-            country: 'MX',
-            email: user.email,
-            business_type: 'individual',
-            controller: {
-              stripe_dashboard: { type: 'express' },
-              fees: { payer: 'application' },
-              losses: { payments: 'application' },
+            contact_email: user.email,
+            dashboard: 'express',
+            identity: { country: 'mx', entity_type: 'individual' },
+            configuration: {
+              merchant: {
+                mcc: '8011', // Doctores
+                capabilities: { card_payments: { requested: true } },
+              },
+              recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
             },
-            capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-            business_profile: {
-              mcc: '8011', // Doctores
-              product_description: 'Consultas médicas agendadas y pagadas a través de la app Citas',
+            defaults: {
+              currency: 'mxn',
+              responsibilities: { fees_collector: 'application', losses_collector: 'application' },
             },
             metadata: { doctor_id: user.id },
           },
-          { idempotencyKey: `doctor-account-${user.id}` },
+          `doctor-account-v2-${user.id}`,
         );
         const { error } = await adminClient
           .from('doctor_payout_accounts')
@@ -57,11 +78,16 @@ Deno.serve(async (req) => {
         accountId = account.id;
       }
 
-      const link = await stripe.accountLinks.create({
+      const link = await stripeV2<{ url: string }>('/v2/core/account_links', {
         account: accountId,
-        type: 'account_onboarding',
-        return_url: RETURN_URL,
-        refresh_url: `${RETURN_URL}?expired=1`,
+        use_case: {
+          type: 'account_onboarding',
+          account_onboarding: {
+            configurations: ['merchant', 'recipient'],
+            return_url: RETURN_URL,
+            refresh_url: `${RETURN_URL}?expired=1`,
+          },
+        },
       });
       return json({ url: link.url });
     }
