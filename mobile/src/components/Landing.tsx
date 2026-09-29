@@ -1,119 +1,247 @@
 import { Link, router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
+import { BookingDemo } from './landing/BookingDemo';
+import { Accordion, FadeIn, LiftCard, Marquee, RotatingWord } from './landing/motion';
 import { colors } from './ui';
 
-const CONTENT_WIDTH = 1080;
+const CONTENT_WIDTH = 1120;
+
+const SPECIALISTS = ['tu pediatra', 'tu dentista', 'tu psicóloga', 'tu nutriólogo', 'tu ginecóloga', 'tu dermatólogo'];
+
+const SPECIALTIES = [
+  '👶 Pediatría',
+  '🦷 Odontología',
+  '🧠 Psicología',
+  '🥗 Nutrición',
+  '🤰 Ginecología',
+  '🩺 Medicina general',
+  '🧴 Dermatología',
+  '❤️ Cardiología',
+  '👁️ Oftalmología',
+  '🦴 Traumatología',
+];
 
 const STEPS = [
-  { n: '1', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
-  { n: '2', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
-  { n: '3', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
+  { icon: '🔍', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
+  { icon: '🗓️', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
+  { icon: '💳', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
 ];
 
-const PROMISES = [
-  { icon: '🔒', title: 'Pago seguro', text: 'Los cobros los procesa Stripe; nunca guardamos tu tarjeta.' },
-  { icon: '🩺', title: 'Doctores con cédula', text: 'Revisamos la cédula profesional antes de que un doctor aparezca.' },
-  { icon: '↩️', title: 'Cambios sin pena', text: 'Cambia o cancela con reembolso dentro del plazo que marca tu doctor.' },
-];
+const AUDIENCES = {
+  patient: {
+    title: 'Deja de llamar al consultorio.',
+    cta: 'Crear mi cuenta',
+    role: undefined,
+    points: [
+      ['📅', 'Ve la agenda real de tu doctor y aparta en segundos, a cualquier hora.'],
+      ['🔁', 'Cambia o cancela desde la app, con reembolso si lo haces a tiempo.'],
+      ['🔔', 'Recibe un recordatorio un día antes de tu cita.'],
+      ['📋', 'Todas tus citas, pasadas y próximas, en un solo lugar.'],
+    ],
+  },
+  doctor: {
+    title: 'Llena tu agenda y cobra sin perseguir a nadie.',
+    cta: 'Crear mi consultorio',
+    role: 'doctor',
+    points: [
+      ['⏰', 'Publica tus horarios y días libres en minutos.'],
+      ['💸', 'Tus pacientes pagan al agendar: menos citas perdidas.'],
+      ['🏦', 'El dinero llega directo a tu cuenta bancaria.'],
+      ['🔗', 'Comparte tu código y te encuentran al instante.'],
+    ],
+  },
+} as const;
 
-const FOR_DOCTORS = [
-  'Publica tus horarios y días libres en minutos.',
-  'Tus pacientes pagan al agendar: menos citas perdidas.',
-  'El dinero llega directo a tu cuenta bancaria.',
-  'Comparte tu código y te encuentran al instante.',
+const FAQ = [
+  {
+    q: '¿Cuánto cuesta usar goodates?',
+    a: 'Para pacientes es gratis: solo pagas el precio de la consulta que fija tu doctor.',
+  },
+  {
+    q: '¿Puedo cambiar o cancelar mi cita?',
+    a: 'Sí, desde "Mis citas", hasta el límite de horas antes de la cita que marca cada doctor. Si cancelas a tiempo, te devolvemos el pago completo.',
+  },
+  {
+    q: '¿Qué pasa si el doctor cancela?',
+    a: 'Te reembolsamos el pago completo automáticamente y te avisamos.',
+  },
+  {
+    q: '¿Cómo sé que el doctor es real?',
+    a: 'Antes de que un doctor aparezca en las búsquedas, revisamos su cédula profesional en el Registro Nacional de Profesionistas.',
+  },
+  {
+    q: 'Soy doctor, ¿cómo recibo mis pagos?',
+    a: 'Das de alta tu cuenta de cobro con Stripe (identificación, RFC y CLABE). Por cada consulta, Stripe deposita el pago en tu cuenta bancaria, menos la comisión de la plataforma.',
+  },
 ];
 
 /** Portada para quien todavía no inicia sesión. */
 export function Landing() {
   const { width } = useWindowDimensions();
-  const wide = width >= 900;
+  const wide = width >= 920;
+  const [audience, setAudience] = useState<keyof typeof AUDIENCES>('patient');
+  const current = AUDIENCES[audience];
+
+  const signUp = (role?: string) => router.push({ pathname: '/sign-up', params: role ? { rol: role } : {} });
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
-      <Section>
-        <View style={styles.nav}>
-          <Wordmark />
-          <Link href="/sign-in" style={styles.navLink}>
-            Iniciar sesión
-          </Link>
-        </View>
-      </Section>
+      {/* Portada */}
+      <View style={{ overflow: 'hidden' }}>
+        <View style={[styles.blob, { width: 520, height: 520, top: -180, right: -140, backgroundColor: colors.primaryLight }]} />
+        <View style={[styles.blob, { width: 260, height: 260, top: 340, left: -120, backgroundColor: '#FDEFC7' }]} />
 
-      <Section>
-        <View style={[styles.hero, wide && { flexDirection: 'row', alignItems: 'center' }]}>
-          <View style={[styles.heroText, wide && { flex: 1 }]}>
-            <Text style={styles.eyebrow}>Citas médicas en línea</Text>
-            <Text style={[styles.h1, wide && { fontSize: 52, lineHeight: 58 }]}>
-              Tu consulta, sin vueltas ni esperas.
-            </Text>
-            <Text style={styles.lead}>
-              Encuentra a tu doctor, elige un horario que te acomode y paga en línea. Tu cita queda confirmada
-              al instante.
-            </Text>
-            <View style={styles.ctaRow}>
-              <Cta title="Agendar una cita" onPress={() => router.push('/sign-up')} />
-              <Cta
-                title="Soy doctor"
-                variant="outline"
-                onPress={() => router.push({ pathname: '/sign-up', params: { rol: 'doctor' } })}
-              />
+        <Section>
+          <View style={styles.nav}>
+            <Wordmark />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {wide && (
+                <Pressable onPress={() => signUp('doctor')} style={{ padding: 8 }}>
+                  <Text style={styles.navLinkMuted}>Soy doctor</Text>
+                </Pressable>
+              )}
+              <Link href="/sign-in" style={styles.navButton}>
+                Iniciar sesión
+              </Link>
             </View>
           </View>
-          <View style={[wide ? { flex: 1, alignItems: 'flex-end' } : { alignItems: 'center' }]}>
-            <BookingPreview />
-          </View>
-        </View>
-      </Section>
+        </Section>
 
+        <Section>
+          <View style={[styles.hero, wide && { flexDirection: 'row', alignItems: 'center' }]}>
+            <View style={[styles.heroText, wide && { flex: 1.1 }]}>
+              <FadeIn>
+                <View style={styles.pill}>
+                  <View style={styles.pulse} />
+                  <Text style={styles.pillText}>Citas médicas en línea, confirmadas al momento</Text>
+                </View>
+              </FadeIn>
+              <FadeIn delay={100}>
+                <Text style={[styles.h1, wide && styles.h1Wide]}>Agenda con</Text>
+                <RotatingWord words={SPECIALISTS} style={[styles.h1, wide && styles.h1Wide, { color: colors.primary }]} />
+                <Text style={[styles.h1, wide && styles.h1Wide]}>en menos de un minuto.</Text>
+              </FadeIn>
+              <FadeIn delay={200}>
+                <Text style={styles.lead}>
+                  Encuentra a tu doctor, elige el horario que te acomode y paga en línea. Sin llamadas, sin
+                  filas y sin esperar a que te devuelvan el mensaje.
+                </Text>
+              </FadeIn>
+              <FadeIn delay={300}>
+                <View style={styles.ctaRow}>
+                  <Cta title="Agendar una cita" onPress={() => signUp()} />
+                  <Cta title="Soy doctor" variant="outline" onPress={() => signUp('doctor')} />
+                </View>
+              </FadeIn>
+              <FadeIn delay={400}>
+                <View style={styles.trustRow}>
+                  <Text style={styles.trust}>🔒 Pago seguro con Stripe</Text>
+                  <Text style={styles.trust}>🩺 Cédula revisada</Text>
+                  <Text style={styles.trust}>↩️ Reembolso si cancelas a tiempo</Text>
+                </View>
+              </FadeIn>
+            </View>
+            <FadeIn delay={250} style={[wide ? { flex: 1, alignItems: 'flex-end' } : { alignItems: 'center' }]}>
+              <BookingDemo />
+            </FadeIn>
+          </View>
+        </Section>
+      </View>
+
+      {/* Especialidades */}
+      <View style={{ paddingVertical: 28, gap: 16 }}>
+        <Text style={[styles.caption, { textAlign: 'center' }]}>Encuentra especialistas en</Text>
+        <Marquee items={SPECIALTIES} />
+      </View>
+
+      {/* Cómo funciona */}
       <Section tint>
-        <Text style={styles.h2}>Así de fácil</Text>
+        <View style={{ gap: 8 }}>
+          <Text style={styles.eyebrow}>Cómo funciona</Text>
+          <Text style={styles.h2}>Tu cita en tres pasos</Text>
+        </View>
         <View style={[styles.grid, wide && { flexDirection: 'row' }]}>
-          {STEPS.map((s) => (
-            <View key={s.n} style={[styles.tile, wide && { flex: 1 }]}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>{s.n}</Text>
-              </View>
-              <Text style={styles.h3}>{s.title}</Text>
-              <Text style={styles.body}>{s.text}</Text>
-            </View>
+          {STEPS.map((s, i) => (
+            <FadeIn key={s.title} delay={i * 120} style={wide && { flex: 1 }}>
+              <LiftCard style={styles.tile}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={styles.iconBubble}>
+                    <Text style={{ fontSize: 26 }}>{s.icon}</Text>
+                  </View>
+                  <Text style={styles.stepIndex}>0{i + 1}</Text>
+                </View>
+                <Text style={styles.h3}>{s.title}</Text>
+                <Text style={styles.body}>{s.text}</Text>
+              </LiftCard>
+            </FadeIn>
           ))}
         </View>
       </Section>
 
+      {/* Pacientes / doctores */}
       <Section>
-        <View style={[styles.grid, wide && { flexDirection: 'row' }]}>
-          {PROMISES.map((p) => (
-            <View key={p.title} style={[styles.promise, wide && { flex: 1 }]}>
-              <Text style={{ fontSize: 28 }}>{p.icon}</Text>
-              <Text style={styles.h3}>{p.title}</Text>
-              <Text style={styles.body}>{p.text}</Text>
-            </View>
-          ))}
-        </View>
-      </Section>
-
-      <Section>
-        <View style={[styles.doctors, wide && { flexDirection: 'row', alignItems: 'center' }]}>
-          <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
-            <Text style={[styles.eyebrow, { color: colors.primaryLight }]}>Para doctores</Text>
-            <Text style={[styles.h2, { color: '#fff' }]}>Llena tu agenda y cobra sin perseguir a nadie.</Text>
-            <View style={{ alignSelf: 'flex-start', marginTop: 8 }}>
-              <Cta
-                title="Crear mi consultorio"
-                variant="light"
-                onPress={() => router.push({ pathname: '/sign-up', params: { rol: 'doctor' } })}
-              />
-            </View>
-          </View>
-          <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
-            {FOR_DOCTORS.map((line) => (
-              <View key={line} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-                <Text style={styles.check}>✓</Text>
-                <Text style={[styles.body, { color: '#fff', flex: 1 }]}>{line}</Text>
-              </View>
+        <View style={{ alignItems: 'center', gap: 20 }}>
+          <View style={styles.segment}>
+            {(['patient', 'doctor'] as const).map((key) => (
+              <Pressable
+                key={key}
+                onPress={() => setAudience(key)}
+                style={[styles.segmentItem, audience === key && styles.segmentItemActive]}
+              >
+                <Text style={[styles.segmentText, audience === key && { color: '#fff' }]}>
+                  {key === 'patient' ? 'Para pacientes' : 'Para doctores'}
+                </Text>
+              </Pressable>
             ))}
+          </View>
+
+          <FadeIn key={audience} style={{ width: '100%' }}>
+            <View style={[styles.audience, wide && { flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[{ gap: 20 }, wide && { flex: 1 }]}>
+                <Text style={[styles.h2, { color: '#fff' }]}>{current.title}</Text>
+                <View style={{ alignSelf: 'flex-start' }}>
+                  <Cta title={current.cta} variant="light" onPress={() => signUp(current.role)} />
+                </View>
+              </View>
+              <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
+                {current.points.map(([icon, text]) => (
+                  <View key={text} style={styles.point}>
+                    <Text style={{ fontSize: 20 }}>{icon}</Text>
+                    <Text style={[styles.body, { color: '#fff', flex: 1 }]}>{text}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </FadeIn>
+        </View>
+      </Section>
+
+      {/* Preguntas frecuentes */}
+      <Section>
+        <View style={[{ gap: 24 }, wide && { flexDirection: 'row', gap: 64 }]}>
+          <View style={[{ gap: 8 }, wide && { flex: 0.8 }]}>
+            <Text style={styles.eyebrow}>Dudas</Text>
+            <Text style={styles.h2}>Preguntas frecuentes</Text>
+            <Text style={styles.body}>¿No encuentras lo que buscas? Escríbenos desde tu perfil en la app.</Text>
+          </View>
+          <View style={wide && { flex: 1.2 }}>
+            {FAQ.map((item) => (
+              <Accordion key={item.q} question={item.q} answer={item.a} />
+            ))}
+          </View>
+        </View>
+      </Section>
+
+      {/* Llamado final */}
+      <Section>
+        <View style={styles.finalCta}>
+          <Text style={[styles.h2, { textAlign: 'center' }]}>¿Listo para tu próxima consulta?</Text>
+          <Text style={[styles.body, { textAlign: 'center' }]}>Crear tu cuenta toma menos de un minuto.</Text>
+          <View style={[styles.ctaRow, { justifyContent: 'center' }]}>
+            <Cta title="Empezar ahora" onPress={() => signUp()} />
+            <Cta title="Ya tengo cuenta" variant="outline" onPress={() => router.push('/sign-in')} />
           </View>
         </View>
       </Section>
@@ -133,7 +261,7 @@ export function Landing() {
 function Section({ children, tint = false }: { children: ReactNode; tint?: boolean }) {
   return (
     <View style={tint ? { backgroundColor: colors.primaryLight } : undefined}>
-      <View style={styles.section}>{children}</View>
+      <View style={[styles.section, tint && { paddingVertical: 56 }]}>{children}</View>
     </View>
   );
 }
@@ -158,82 +286,107 @@ function Cta({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.cta,
-        variant === 'solid' && { backgroundColor: colors.primary },
-        variant === 'outline' && { borderWidth: 1.5, borderColor: colors.primary },
-        variant === 'light' && { backgroundColor: '#fff' },
-        pressed && { opacity: 0.8 },
-      ]}
+      style={(state) => {
+        const hovered = (state as { hovered?: boolean }).hovered;
+        return [
+          styles.cta,
+          variant === 'solid' && { backgroundColor: hovered ? '#9A4422' : colors.primary },
+          variant === 'outline' && { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: hovered ? colors.primaryLight : 'transparent' },
+          variant === 'light' && { backgroundColor: hovered ? colors.primaryLight : '#fff' },
+          state.pressed && { transform: [{ scale: 0.97 }] },
+        ];
+      }}
     >
       <Text style={[styles.ctaText, { color: variant === 'solid' ? '#fff' : colors.primary }]}>{title}</Text>
     </Pressable>
   );
 }
 
-/** Tarjeta de ejemplo que muestra cómo se ve agendar. */
-function BookingPreview() {
-  const slots = ['9:00', '9:30', '10:30', '12:00'];
-  return (
-    <View style={styles.preview}>
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-        <View style={styles.avatar}>
-          <Text style={{ fontSize: 22 }}>👩‍⚕️</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.h3}>Dra. Ana Pérez</Text>
-          <Text style={styles.small}>Pediatría · Guadalajara</Text>
-        </View>
-      </View>
-      <Text style={[styles.small, { fontWeight: '600', color: colors.text }]}>Martes 14 de octubre</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {slots.map((s, i) => (
-          <View key={s} style={[styles.slot, i === 1 && { backgroundColor: colors.primary }]}>
-            <Text style={{ fontWeight: '600', color: i === 1 ? '#fff' : colors.primary }}>{s}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.previewButton}>
-        <Text style={{ color: '#fff', fontWeight: '700' }}>Pagar $600 y agendar</Text>
-      </View>
-      <View style={styles.badge}>
-        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>✓ Cita confirmada</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  section: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 28, gap: 20 },
+  section: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 32, gap: 24 },
+  blob: { position: 'absolute', borderRadius: 999, opacity: 0.8 },
   nav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  navLink: { color: colors.primary, fontWeight: '600', fontSize: 16, padding: 8 },
-  wordmark: { fontSize: 24, fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
-  hero: { gap: 32 },
-  heroText: { gap: 16 },
-  eyebrow: { color: colors.primary, fontWeight: '700', fontSize: 14, letterSpacing: 1, textTransform: 'uppercase' },
-  h1: { fontSize: 38, lineHeight: 44, fontWeight: '800', color: colors.text, letterSpacing: -1 },
-  h2: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
-  h3: { fontSize: 18, fontWeight: '700', color: colors.text },
-  lead: { fontSize: 18, lineHeight: 27, color: colors.muted, maxWidth: 520 },
+  navLinkMuted: { color: colors.text, fontWeight: '600', fontSize: 15 },
+  navButton: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  wordmark: { fontSize: 26, fontWeight: '800', color: colors.text, letterSpacing: -0.8 },
+  hero: { gap: 40, paddingBottom: 24 },
+  heroText: { gap: 20 },
+  pill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2F855A' },
+  pillText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  h1: { fontSize: 40, lineHeight: 46, fontWeight: '800', color: colors.text, letterSpacing: -1.2 },
+  h1Wide: { fontSize: 60, lineHeight: 66, letterSpacing: -2 },
+  h2: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: colors.text, letterSpacing: -0.8 },
+  h3: { fontSize: 19, fontWeight: '700', color: colors.text },
+  eyebrow: { color: colors.primary, fontWeight: '700', fontSize: 13, letterSpacing: 1.2, textTransform: 'uppercase' },
+  caption: { color: colors.muted, fontWeight: '600', fontSize: 15 },
+  lead: { fontSize: 18, lineHeight: 28, color: colors.muted, maxWidth: 540 },
   body: { fontSize: 16, lineHeight: 24, color: colors.muted },
-  small: { fontSize: 14, color: colors.muted },
-  ctaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  cta: { borderRadius: 999, paddingVertical: 14, paddingHorizontal: 24 },
+  ctaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  cta: { borderRadius: 999, paddingVertical: 15, paddingHorizontal: 26 },
   ctaText: { fontSize: 16, fontWeight: '700' },
+  trustRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, rowGap: 6 },
+  trust: { color: colors.muted, fontSize: 14, fontWeight: '500' },
   grid: { gap: 16 },
-  tile: { backgroundColor: colors.card, borderRadius: 20, padding: 24, gap: 10 },
-  stepNumber: {
-    width: 36,
-    height: 36,
+  tile: { backgroundColor: colors.card, borderRadius: 24, padding: 28, gap: 12 },
+  iconBubble: {
+    width: 56,
+    height: 56,
     borderRadius: 18,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepNumberText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  promise: { gap: 8, paddingVertical: 8 },
-  doctors: { backgroundColor: colors.primary, borderRadius: 28, padding: 32, gap: 28 },
-  check: { color: colors.primaryLight, fontWeight: '800', fontSize: 18, lineHeight: 24 },
+  stepIndex: { fontSize: 32, fontWeight: '800', color: colors.primaryLight },
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    borderRadius: 999,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  segmentItem: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 999 },
+  segmentItemActive: { backgroundColor: colors.text },
+  segmentText: { fontWeight: '700', color: colors.text, fontSize: 15 },
+  audience: { backgroundColor: colors.primary, borderRadius: 32, padding: 36, gap: 32 },
+  point: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    padding: 14,
+  },
+  finalCta: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 32,
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    gap: 16,
+    alignItems: 'center',
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -243,36 +396,4 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   footerLink: { color: colors.muted, fontSize: 14 },
-  preview: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    padding: 24,
-    gap: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#7A3A1C',
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slot: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  previewButton: { backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primaryLight,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
 });
