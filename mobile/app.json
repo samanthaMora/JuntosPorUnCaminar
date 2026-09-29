@@ -45,6 +45,12 @@
     "scheme": "citas",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "033c73f8-ace4-4def-9a21-3b5e2914109b"
+      }
     }
   }
 }
