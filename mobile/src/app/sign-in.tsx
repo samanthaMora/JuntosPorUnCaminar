@@ -1,7 +1,6 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
-
 import { Alert } from '@/lib/alert';
 import { Button, Field, Muted, Screen, Title } from '@/components/ui';
 import { safeNext } from '@/lib/redirect';

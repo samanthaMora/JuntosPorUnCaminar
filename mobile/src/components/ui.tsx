@@ -10,19 +10,29 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+// Paleta cálida: terracota sobre crema.
 export const colors = {
-  primary: '#0F766E',
-  primaryLight: '#CCFBF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  background: '#F8FAFC',
+  primary: '#B4532A',
+  primaryLight: '#FBE6DA',
+  text: '#2B1D16',
+  muted: '#76625A',
+  border: '#EFE1D6',
+  background: '#FFF9F4',
   card: '#FFFFFF',
-  danger: '#B91C1C',
+  danger: '#B42318',
 };
 
+/** Ancho máximo del contenido para que no se estire en pantallas grandes. */
+export const MAX_WIDTH = 720;
+
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
-  if (!scroll) return <View style={styles.screen}>{children}</View>;
+  if (!scroll) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={styles.screen}>{children}</View>
+      </View>
+    );
+  }
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.screen}>
       {children}
@@ -109,20 +119,28 @@ export function Loading() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: 16, gap: 12, backgroundColor: colors.background },
+  screen: {
+    flexGrow: 1,
+    padding: 16,
+    gap: 12,
+    backgroundColor: colors.background,
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
   title: { fontSize: 22, fontWeight: '700', color: colors.text },
   muted: { fontSize: 14, color: colors.muted, lineHeight: 20 },
   label: { fontSize: 14, fontWeight: '600', color: colors.text },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     gap: 8,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  button: { borderRadius: 10, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center' },
+  button: { borderRadius: 999, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center' },
   buttonPrimary: { backgroundColor: colors.primary },
   buttonOutline: { borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card },
   buttonText: { fontSize: 16, fontWeight: '600' },

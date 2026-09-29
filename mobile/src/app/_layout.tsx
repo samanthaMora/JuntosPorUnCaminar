@@ -13,7 +13,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <PushManager />
         <Stack screenOptions={{ headerTintColor: colors.primary, headerBackTitle: 'Atrás' }}>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ headerShown: false, title: 'goodates' }} />
           <Stack.Screen name="(patient)" options={{ headerShown: false }} />
           <Stack.Screen name="(practice)" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ title: 'Iniciar sesión' }} />

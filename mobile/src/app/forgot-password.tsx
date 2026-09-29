@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-
 import { Alert } from '@/lib/alert';
 import { Button, Field, Muted, Screen } from '@/components/ui';
 import { supabase } from '@/lib/supabase';

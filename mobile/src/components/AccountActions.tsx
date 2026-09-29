@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-
 import { Alert } from '@/lib/alert';
 import { signOut } from '@/lib/auth';
 import { invokeFunction } from '@/lib/supabase';

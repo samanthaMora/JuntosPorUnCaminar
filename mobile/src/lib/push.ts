@@ -24,7 +24,7 @@ export async function registerForPushNotifications() {
   try {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Citas',
+        name: 'goodates',
         importance: Notifications.AndroidImportance.HIGH,
       });
     }

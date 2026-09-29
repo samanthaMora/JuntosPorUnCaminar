@@ -47,7 +47,7 @@ export default function Agenda() {
   function share() {
     const link = Linking.createURL(`doctor/${doctor!.public_code}`);
     Share.share({
-      message: `Agenda tu cita conmigo en la app Citas. Búscame con el código ${doctor!.public_code} o abre: ${link}`,
+      message: `Agenda tu cita conmigo en goodates. Búscame con el código ${doctor!.public_code} o abre: ${link}`,
     });
   }
 

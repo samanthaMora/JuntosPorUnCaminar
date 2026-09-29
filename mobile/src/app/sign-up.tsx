@@ -9,8 +9,8 @@ import { supabase } from '@/lib/supabase';
 import type { Role } from '@/lib/types';
 
 export default function SignUp() {
-  const { next } = useLocalSearchParams<{ next?: string }>();
-  const [role, setRole] = useState<Role>('patient');
+  const { next, rol } = useLocalSearchParams<{ next?: string; rol?: string }>();
+  const [role, setRole] = useState<Role>(rol === 'doctor' ? 'doctor' : 'patient');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');

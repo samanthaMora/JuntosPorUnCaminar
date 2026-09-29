@@ -20,7 +20,7 @@ export function usePayment() {
   return useCallback(
     async ({ clientSecret, name, email }: PaymentRequest): Promise<PaymentResult> => {
       const init = await initPaymentSheet({
-        merchantDisplayName: 'Citas',
+        merchantDisplayName: 'goodates',
         paymentIntentClientSecret: clientSecret,
         returnURL: Linking.createURL('stripe-redirect'),
         defaultBillingDetails: { name, email },

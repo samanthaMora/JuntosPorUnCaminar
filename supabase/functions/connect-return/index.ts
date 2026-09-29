@@ -4,6 +4,6 @@ Deno.serve((req) => {
   const expired = new URL(req.url).searchParams.has('expired');
   const message = expired
     ? 'El enlace expiró. Cierra esta ventana y vuelve a tocar "Configurar cobros" en la app.'
-    : 'Listo. Cierra esta ventana para volver a la app Citas.';
+    : 'Listo. Cierra esta ventana para volver a goodates.';
   return new Response(message, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 });

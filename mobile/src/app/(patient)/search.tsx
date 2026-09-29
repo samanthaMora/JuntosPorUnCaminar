@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
-import { Card, colors, Field, Muted } from '@/components/ui';
+import { Card, colors, Field, MAX_WIDTH, Muted } from '@/components/ui';
 import { formatMoney } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 
@@ -31,7 +31,7 @@ export default function Search() {
   return (
     <FlatList
       style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: 16, gap: 12 }}
+      contentContainerStyle={{ padding: 16, gap: 12, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' }}
       data={results}
       keyExtractor={(d) => d.id}
       ListHeaderComponent={
