@@ -1,0 +1,11 @@
+# Stripe no manda JWT de Supabase: el webhook valida la firma de Stripe.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Página de regreso del alta de Stripe Connect (se abre en el navegador).
+[functions.connect-return]
+verify_jwt = false
+
+# La llama pg_cron; se protege con el header x-cron-secret.
+[functions.send-notifications]
+verify_jwt = false
