@@ -1,9 +1,10 @@
 // Elimina la cuenta del usuario que llama (requisito de App Store y Google Play).
 // No se permite mientras tenga citas próximas: primero debe cancelarlas para
 // que los pacientes reciban su reembolso.
-import { adminClient, json, userClient } from '../_shared/clients.ts';
+import { adminClient, corsHeaders, json, userClient } from '../_shared/clients.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
 
   const { data: auth } = await userClient(req).auth.getUser();

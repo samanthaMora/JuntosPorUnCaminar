@@ -1,8 +1,9 @@
 // Aparta un horario y crea el cobro en Stripe. La cita se confirma cuando
 // llega el webhook `payment_intent.succeeded`.
-import { adminClient, json, stripe, userClient } from '../_shared/clients.ts';
+import { adminClient, corsHeaders, json, stripe, userClient } from '../_shared/clients.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
 
   const { doctor_id, starts_at } = await req.json();

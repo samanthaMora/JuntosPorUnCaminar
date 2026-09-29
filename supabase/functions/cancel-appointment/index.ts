@@ -1,9 +1,10 @@
 // Cancela una cita (respetando el límite de cambios para pacientes) y
 // reembolsa el pago completo.
-import { adminClient, json, userClient } from '../_shared/clients.ts';
+import { adminClient, corsHeaders, json, userClient } from '../_shared/clients.ts';
 import { refundInFull } from '../_shared/connect.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
 
   const { appointment_id } = await req.json();

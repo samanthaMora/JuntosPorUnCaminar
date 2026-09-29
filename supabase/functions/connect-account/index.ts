@@ -2,12 +2,13 @@
 //   action "onboard":   crea la cuenta (si falta) y devuelve el enlace de alta de Stripe.
 //   action "refresh":   consulta a Stripe y actualiza si ya puede cobrar.
 //   action "dashboard": enlace al panel de Stripe donde el doctor ve sus depósitos.
-import { adminClient, json, stripe, userClient } from '../_shared/clients.ts';
+import { adminClient, corsHeaders, json, stripe, userClient } from '../_shared/clients.ts';
 import { syncPayoutAccount } from '../_shared/connect.ts';
 
 const RETURN_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/connect-return`;
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
 
   const { data: auth } = await userClient(req).auth.getUser();
