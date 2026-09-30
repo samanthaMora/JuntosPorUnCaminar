@@ -116,18 +116,27 @@ Las reglas importantes viven en la base de datos, no solo en la app: nunca se pu
 
 En **iOS** los avisos funcionan en Expo Go. En **Android**, Expo Go ya no soporta push: hace falta un *development build* (`npx eas-cli@latest build --profile development --platform android`). Sin push la app funciona igual; solo no llegan los avisos.
 
-### 4. Verificar doctores
-Cuando un doctor registra su cédula, búscala en el [Registro Nacional de Profesionistas](https://www.cedulaprofesional.sep.gob.mx) y confirma que el nombre y la profesión coinciden. En el *SQL Editor*:
-```sql
--- Doctores pendientes de verificar
-select d.public_code, p.full_name, d.specialty, d.license_number
-  from doctors d join profiles p on p.id = d.id
- where d.license_number <> '' and d.license_verified_at is null;
+### 4. Verificar doctores (automático)
+Al guardar su cédula, la función `verify-license` la consulta en el Registro Nacional de Profesionistas de la SEP a través de [Kiban](https://docs.kiban.com/reference/validate-by-number). Se aprueba sola si:
+- la cédula existe,
+- el primer apellido y al menos un nombre de la SEP aparecen en el nombre del doctor en la app, y
+- la profesión es del área de la salud (medicina, odontología, psicología, nutrición, etc.).
 
--- Aprobar uno
+Si no se cumple, el doctor ve el motivo en *Configuración*. Si cambia su cédula o su nombre, se vuelve a verificar.
+
+Configuración (una sola vez):
+```bash
+supabase secrets set KIBAN_API_KEY=...                        # tu clave de Kiban
+supabase secrets set KIBAN_BASE_URL=https://sandbox.link.kiban.com  # o la URL de producción que te dé Kiban
+supabase secrets set KIBAN_TEST_CASE_ID=681bb9c0d4e2f1a038b7c5e1   # solo en sandbox; bórralo en producción
+supabase db push   # aplica 20260930000000_auto_license_check.sql
+supabase functions deploy verify-license
+```
+
+Para aprobar a alguien a mano (por ejemplo, si la SEP no responde), en el *SQL Editor*:
+```sql
 update doctors set license_verified_at = now() where public_code = 'CODIGO';
 ```
-Si el doctor cambia su cédula después, vuelve a quedar pendiente automáticamente.
 
 ### 5. App
 ```bash

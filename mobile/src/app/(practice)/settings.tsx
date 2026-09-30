@@ -6,7 +6,7 @@ import { AccountActions } from '@/components/AccountActions';
 import { PayoutsCard } from '@/components/PayoutsCard';
 import { Button, Card, colors, Field, Loading, Muted, Screen } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { invokeFunction, supabase } from '@/lib/supabase';
 import type { Doctor } from '@/lib/types';
 
 type Form = {
@@ -30,6 +30,8 @@ export default function Settings() {
   const { session, profile, refreshProfile } = useAuth();
   const [form, setForm] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [licenseMessage, setLicenseMessage] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -99,7 +101,25 @@ export default function Settings() {
       return Alert.alert('No se pudo guardar', error.code === '23505' ? 'Ese código ya lo usa otro doctor.' : error.message);
     }
     await refreshProfile();
-    Alert.alert('Guardado');
+    if (license) await verifyLicense();
+    else Alert.alert('Guardado');
+  }
+
+  /** Consulta la cédula en la SEP; si todo coincide queda verificada sola. */
+  async function verifyLicense() {
+    setChecking(true);
+    setLicenseMessage(null);
+    try {
+      const res = await invokeFunction<{ status: string; message?: string }>('verify-license', {});
+      const verified = res.status === 'verified';
+      setForm((f) => f && { ...f, license_verified: verified });
+      setLicenseMessage(verified ? null : (res.message ?? null));
+      Alert.alert(verified ? 'Guardado. Tu cédula está verificada.' : 'Guardado', verified ? undefined : res.message);
+    } catch (e) {
+      setLicenseMessage((e as Error).message);
+    } finally {
+      setChecking(false);
+    }
   }
 
   return (
@@ -152,12 +172,20 @@ export default function Settings() {
         />
         {form.license_verified ? (
           <Text style={{ color: colors.primary, fontWeight: '600' }}>✓ Cédula verificada</Text>
+        ) : checking ? (
+          <Muted>Consultando el Registro Nacional de Profesionistas…</Muted>
         ) : (
-          <Muted>
-            {form.license_number
-              ? 'En revisión: la validamos en el Registro Nacional de Profesionistas. Si la cambias, se vuelve a revisar.'
-              : 'Obligatoria para aparecer en búsquedas. La validamos en el Registro Nacional de Profesionistas.'}
-          </Muted>
+          <>
+            <Muted>
+              {licenseMessage ??
+                (form.license_number
+                  ? 'Aún no está verificada. La revisamos en el Registro Nacional de Profesionistas; tu nombre debe coincidir con el de la SEP.'
+                  : 'Obligatoria para aparecer en búsquedas. La verificamos automáticamente en el Registro Nacional de Profesionistas.')}
+            </Muted>
+            {!!form.license_number && (
+              <Button title="Verificar ahora" variant="secondary" onPress={verifyLicense} loading={checking} />
+            )}
+          </>
         )}
       </Card>
 
