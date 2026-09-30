@@ -1,5 +1,6 @@
+import Feather from '@expo/vector-icons/Feather';
 import { Link, router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { BookingDemo } from './landing/BookingDemo';
@@ -11,22 +12,30 @@ const CONTENT_WIDTH = 1120;
 const SPECIALISTS = ['tu pediatra', 'tu dentista', 'tu psicóloga', 'tu nutriólogo', 'tu ginecóloga', 'tu dermatólogo'];
 
 const SPECIALTIES = [
-  '👶 Pediatría',
-  '🦷 Odontología',
-  '🧠 Psicología',
-  '🥗 Nutrición',
-  '🤰 Ginecología',
-  '🩺 Medicina general',
-  '🧴 Dermatología',
-  '❤️ Cardiología',
-  '👁️ Oftalmología',
-  '🦴 Traumatología',
+  'Pediatría',
+  'Odontología',
+  'Psicología',
+  'Nutrición',
+  'Ginecología',
+  'Medicina general',
+  'Dermatología',
+  'Cardiología',
+  'Oftalmología',
+  'Traumatología',
 ];
 
-const STEPS = [
-  { icon: '🔍', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
-  { icon: '🗓️', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
-  { icon: '💳', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
+type IconName = ComponentProps<typeof Feather>['name'];
+
+const TRUST: [IconName, string][] = [
+  ['lock', 'Pago seguro con Stripe'],
+  ['shield', 'Cédula revisada'],
+  ['rotate-ccw', 'Reembolso si cancelas a tiempo'],
+];
+
+const STEPS: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'search', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
+  { icon: 'calendar', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
+  { icon: 'credit-card', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
 ];
 
 const AUDIENCES = {
@@ -35,10 +44,10 @@ const AUDIENCES = {
     cta: 'Crear mi cuenta',
     role: undefined,
     points: [
-      ['📅', 'Ve la agenda real de tu doctor y aparta en segundos, a cualquier hora.'],
-      ['🔁', 'Cambia o cancela desde la app, con reembolso si lo haces a tiempo.'],
-      ['🔔', 'Recibe un recordatorio un día antes de tu cita.'],
-      ['📋', 'Todas tus citas, pasadas y próximas, en un solo lugar.'],
+      ['calendar', 'Ve la agenda real de tu doctor y aparta en segundos, a cualquier hora.'],
+      ['refresh-cw', 'Cambia o cancela desde la app, con reembolso si lo haces a tiempo.'],
+      ['bell', 'Recibe un recordatorio un día antes de tu cita.'],
+      ['list', 'Todas tus citas, pasadas y próximas, en un solo lugar.'],
     ],
   },
   doctor: {
@@ -46,10 +55,10 @@ const AUDIENCES = {
     cta: 'Crear mi consultorio',
     role: 'doctor',
     points: [
-      ['⏰', 'Publica tus horarios y días libres en minutos.'],
-      ['💸', 'Tus pacientes pagan al agendar: menos citas perdidas.'],
-      ['🏦', 'El dinero llega directo a tu cuenta bancaria.'],
-      ['🔗', 'Comparte tu código y te encuentran al instante.'],
+      ['clock', 'Publica tus horarios y días libres en minutos.'],
+      ['check-circle', 'Tus pacientes pagan al agendar: menos citas perdidas.'],
+      ['dollar-sign', 'El dinero llega directo a tu cuenta bancaria.'],
+      ['share-2', 'Comparte tu código y te encuentran al instante.'],
     ],
   },
 } as const;
@@ -137,9 +146,12 @@ export function Landing() {
               </FadeIn>
               <FadeIn delay={400}>
                 <View style={styles.trustRow}>
-                  <Text style={styles.trust}>🔒 Pago seguro con Stripe</Text>
-                  <Text style={styles.trust}>🩺 Cédula revisada</Text>
-                  <Text style={styles.trust}>↩️ Reembolso si cancelas a tiempo</Text>
+                  {TRUST.map(([icon, text]) => (
+                    <View key={text} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Feather name={icon} size={14} color={colors.primary} />
+                      <Text style={styles.trust}>{text}</Text>
+                    </View>
+                  ))}
                 </View>
               </FadeIn>
             </View>
@@ -168,7 +180,7 @@ export function Landing() {
               <LiftCard style={styles.tile}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View style={styles.iconBubble}>
-                    <Text style={{ fontSize: 26 }}>{s.icon}</Text>
+                    <Feather name={s.icon} size={26} color={colors.primary} />
                   </View>
                   <Text style={styles.stepIndex}>0{i + 1}</Text>
                 </View>
@@ -208,7 +220,7 @@ export function Landing() {
               <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
                 {current.points.map(([icon, text]) => (
                   <View key={text} style={styles.point}>
-                    <Text style={{ fontSize: 20 }}>{icon}</Text>
+                    <Feather name={icon as IconName} size={20} color="#fff" />
                     <Text style={[styles.body, { color: '#fff', flex: 1 }]}>{text}</Text>
                   </View>
                 ))}

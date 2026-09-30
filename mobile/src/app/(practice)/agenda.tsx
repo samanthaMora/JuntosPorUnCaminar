@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import * as Linking from 'expo-linking';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -109,7 +110,12 @@ export default function Agenda() {
               <Text style={{ fontSize: 16, fontWeight: '600' }}>
                 {formatTime(row.starts_at, tz)} – {formatTime(row.ends_at, tz)} · {row.patient.full_name}
               </Text>
-              {!!row.patient.phone && <Muted>📞 {row.patient.phone}</Muted>}
+              {!!row.patient.phone && (
+                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                  <Feather name="phone" size={14} color={colors.muted} />
+                  <Muted>{row.patient.phone}</Muted>
+                </View>
+              )}
               <Button title="Cancelar y reembolsar" variant="danger" onPress={() => cancel(row)} />
             </Card>
           ))}

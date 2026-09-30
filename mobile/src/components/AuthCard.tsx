@@ -1,3 +1,5 @@
+import Feather from '@expo/vector-icons/Feather';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
@@ -23,9 +25,9 @@ import { fonts } from '@/lib/webFonts';
 
 export type AuthMode = 'signin' | 'signup';
 
-const ROLES: { key: Role; icon: string; title: string; text: string }[] = [
-  { key: 'patient', icon: '🙂', title: 'Paciente', text: 'Quiero agendar citas' },
-  { key: 'doctor', icon: '🩺', title: 'Doctor', text: 'Quiero recibir pacientes' },
+const ROLES: { key: Role; title: string; text: string }[] = [
+  { key: 'patient', title: 'Paciente', text: 'Quiero agendar citas' },
+  { key: 'doctor', title: 'Doctor', text: 'Quiero recibir pacientes' },
 ];
 
 /** Tarjeta única para iniciar sesión o crear cuenta, como paciente o doctor. */
@@ -124,7 +126,10 @@ export function AuthCard({
         <FadeIn style={styles.card}>
           <View style={styles.top}>
             <Pressable onPress={() => router.replace('/')} hitSlop={8}>
-              <Text style={styles.back}>← Inicio</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Feather name="arrow-left" size={15} color={colors.muted} />
+                <Text style={styles.back}>Inicio</Text>
+              </View>
             </Pressable>
             <Text style={styles.wordmark}>
               good<Text style={{ color: colors.primary }}>dates</Text>
@@ -181,7 +186,13 @@ export function AuthCard({
                     <View style={[styles.radio, selected && styles.radioOn]}>
                       {selected && <View style={styles.radioDot} />}
                     </View>
-                    <Text style={{ fontSize: 26 }}>{r.icon}</Text>
+                    <View style={[styles.roleIcon, selected && { backgroundColor: colors.primary }]}>
+                      {r.key === 'doctor' ? (
+                        <MaterialCommunityIcons name="stethoscope" size={20} color={selected ? '#fff' : colors.primary} />
+                      ) : (
+                        <Feather name="user" size={20} color={selected ? '#fff' : colors.primary} />
+                      )}
+                    </View>
                     <Text style={styles.roleTitle}>{r.title}</Text>
                     <Text style={styles.roleText}>{r.text}</Text>
                   </Pressable>
@@ -274,9 +285,12 @@ export function AuthCard({
             {busy ? (
               <ActivityIndicator color="#fff" />
             ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={styles.submitText}>
-                {isSignup ? `Crear cuenta de ${role === 'doctor' ? 'doctor' : 'paciente'}` : 'Entrar'} →
+                {isSignup ? `Crear cuenta de ${role === 'doctor' ? 'doctor' : 'paciente'}` : 'Entrar'}
               </Text>
+                <Feather name="arrow-right" size={18} color="#fff" />
+              </View>
             )}
           </Pressable>
 
@@ -349,6 +363,14 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
     backgroundColor: colors.card,
+  },
+  roleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   roleSelected: { borderColor: colors.primary, backgroundColor: '#FFF4EE' },
   roleTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 4, fontFamily: fonts.sans },

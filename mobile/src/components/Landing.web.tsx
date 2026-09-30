@@ -1,5 +1,6 @@
+import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type CSSProperties, type MouseEvent } from 'react';
 
 import { loadWebFonts } from '@/lib/webFonts';
 
@@ -8,13 +9,15 @@ import { loadWebFonts } from '@/lib/webFonts';
 
 const SPECIALISTS = ['tu pediatra', 'tu dentista', 'tu psicóloga', 'tu nutriólogo', 'tu ginecóloga', 'tu dermatólogo'];
 
-const SPECIALTIES_A = ['👶 Pediatría', '🦷 Odontología', '🧠 Psicología', '🥗 Nutrición', '🤰 Ginecología', '🩺 Medicina general'];
-const SPECIALTIES_B = ['🧴 Dermatología', '❤️ Cardiología', '👁️ Oftalmología', '🦴 Traumatología', '👂 Otorrinolaringología', '🧘 Fisioterapia'];
+const SPECIALTIES_A = ['Pediatría', 'Odontología', 'Psicología', 'Nutrición', 'Ginecología', 'Medicina general'];
+const SPECIALTIES_B = ['Dermatología', 'Cardiología', 'Oftalmología', 'Traumatología', 'Otorrinolaringología', 'Fisioterapia'];
 
-const STEPS = [
-  { icon: '🔍', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
-  { icon: '🗓️', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
-  { icon: '💳', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
+type IconName = ComponentProps<typeof Feather>['name'];
+
+const STEPS: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'search', title: 'Encuentra a tu doctor', text: 'Busca por nombre, especialidad o ciudad, o usa el código que te compartió.' },
+  { icon: 'calendar', title: 'Elige tu horario', text: 'Ve los días y horas libres de las próximas tres semanas y aparta el que te acomode.' },
+  { icon: 'credit-card', title: 'Paga y listo', text: 'Pagas en línea con tarjeta y tu cita queda confirmada al momento.' },
 ];
 
 const AUDIENCES = {
@@ -24,10 +27,10 @@ const AUDIENCES = {
     cta: 'Crear mi cuenta',
     role: undefined,
     points: [
-      ['📅', 'Ve la agenda real de tu doctor y aparta en segundos, a cualquier hora.'],
-      ['🔁', 'Cambia o cancela desde la app, con reembolso si lo haces a tiempo.'],
-      ['🔔', 'Recibe un recordatorio un día antes de tu cita.'],
-      ['📋', 'Todas tus citas, pasadas y próximas, en un solo lugar.'],
+      ['calendar', 'Ve la agenda real de tu doctor y aparta en segundos, a cualquier hora.'],
+      ['refresh-cw', 'Cambia o cancela desde la app, con reembolso si lo haces a tiempo.'],
+      ['bell', 'Recibe un recordatorio un día antes de tu cita.'],
+      ['list', 'Todas tus citas, pasadas y próximas, en un solo lugar.'],
     ],
   },
   doctor: {
@@ -36,10 +39,10 @@ const AUDIENCES = {
     cta: 'Crear mi consultorio',
     role: 'doctor',
     points: [
-      ['⏰', 'Publica tus horarios y días libres en minutos.'],
-      ['💸', 'Tus pacientes pagan al agendar: menos citas perdidas.'],
-      ['🏦', 'El dinero llega directo a tu cuenta bancaria.'],
-      ['🔗', 'Comparte tu código y te encuentran al instante.'],
+      ['clock', 'Publica tus horarios y días libres en minutos.'],
+      ['check-circle', 'Tus pacientes pagan al agendar: menos citas perdidas.'],
+      ['dollar-sign', 'El dinero llega directo a tu cuenta bancaria.'],
+      ['share-2', 'Comparte tu código y te encuentran al instante.'],
     ],
   },
 } as const;
@@ -150,7 +153,9 @@ export function Landing() {
               <li key={s.title} className="gd-step gd-reveal" style={{ '--d': `${i * 120}ms` } as CSSProperties}>
                 <span className="gd-step-dot">{i + 1}</span>
                 <div className="gd-card gd-step-card">
-                  <span className="gd-step-icon">{s.icon}</span>
+                  <span className="gd-step-icon">
+                    <Feather name={s.icon} size={26} color="#B4532A" />
+                  </span>
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </div>
@@ -283,17 +288,29 @@ function Hero() {
             </button>
           </div>
           <ul className="gd-trust gd-in" style={{ '--d': '500ms' } as CSSProperties}>
-            <li>🔒 Pago seguro con Stripe</li>
-            <li>🩺 Cédula revisada</li>
-            <li>↩️ Reembolso si cancelas a tiempo</li>
+            <li>
+              <Feather name="lock" size={15} color="#B4532A" /> Pago seguro con Stripe
+            </li>
+            <li>
+              <Feather name="shield" size={15} color="#B4532A" /> Cédula revisada
+            </li>
+            <li>
+              <Feather name="rotate-ccw" size={15} color="#B4532A" /> Reembolso si cancelas a tiempo
+            </li>
           </ul>
         </div>
 
         <div className="gd-hero-visual gd-in" style={{ '--d': '300ms' } as CSSProperties}>
           <div className="gd-orbit" aria-hidden>
-            <span className="gd-float gd-float-1">✓ Cita confirmada</span>
-            <span className="gd-float gd-float-2">🔔 Mañana, 10:30</span>
-            <span className="gd-float gd-float-3">💳 Pago recibido</span>
+            <span className="gd-float gd-float-1">
+              <Feather name="check-circle" size={16} color="#2F855A" /> Cita confirmada
+            </span>
+            <span className="gd-float gd-float-2">
+              <Feather name="bell" size={16} color="#B4532A" /> Mañana, 10:30
+            </span>
+            <span className="gd-float gd-float-3">
+              <Feather name="credit-card" size={16} color="#B4532A" /> Pago recibido
+            </span>
           </div>
           <Phone />
         </div>
@@ -347,7 +364,7 @@ function Phone() {
         </div>
 
         <div className="gd-doc">
-          <span className="gd-avatar">👩‍⚕️</span>
+          <span className="gd-avatar">AP</span>
           <div>
             <strong>Dra. Ana Pérez</strong>
             <small>Pediatría · Guadalajara</small>
@@ -462,7 +479,9 @@ function Audience() {
             <ul className="gd-points">
               {current.points.map(([icon, text], i) => (
                 <li key={text} style={{ '--d': `${i * 80}ms` } as CSSProperties}>
-                  <span>{icon}</span>
+                  <span className="gd-point-icon">
+                    <Feather name={icon as IconName} size={18} color="#fff" />
+                  </span>
                   {text}
                 </li>
               ))}
@@ -567,7 +586,8 @@ const CSS = `
 .gd-underline { position: relative; white-space: nowrap; }
 .gd-underline::after { content: ''; position: absolute; left: 0; right: 0; bottom: .05em; height: .14em; border-radius: 99px; background: var(--sun); z-index: -1; transform-origin: left; animation: gd-draw 1s .9s cubic-bezier(.2,.8,.2,1) both; }
 .gd-lead { font-size: 19px; line-height: 1.65; color: var(--muted); max-width: 540px; }
-.gd-trust { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; font-weight: 500; color: var(--muted); }
+.gd-trust li, .gd-float { display: inline-flex; align-items: center; gap: 8px; }
+.gd-trust { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; font-weight: 500; color: var(--muted); }
 
 .gd-in { opacity: 0; animation: gd-rise .9s cubic-bezier(.2,.8,.2,1) var(--d, 0ms) both; }
 
@@ -584,7 +604,7 @@ const CSS = `
 .gd-doc strong { display: block; font-size: 15px; }
 .gd-doc small { color: var(--muted); font-size: 12px; }
 .gd-doc > div { flex: 1; }
-.gd-avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; background: linear-gradient(135deg, var(--primary-light), #FDEBB8); }
+.gd-avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 800; color: var(--primary); background: linear-gradient(135deg, var(--primary-light), #FDEBB8); }
 .gd-price { font-weight: 800; color: var(--primary); }
 .gd-phone-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
 .gd-days { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -634,6 +654,9 @@ const CSS = `
 .gd-marquee-track { display: flex; gap: 12px; width: max-content; animation: gd-marquee 40s linear infinite; }
 .gd-marquee-track.is-reverse { animation-direction: reverse; animation-duration: 46s; }
 .gd-marquee:hover .gd-marquee-track { animation-play-state: paused; }
+.gd-chip::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); margin-right: 10px; vertical-align: middle; }
+.gd-chip:nth-child(3n+1)::before { background: var(--sun); }
+.gd-chip:nth-child(3n+2)::before { background: var(--sage); }
 .gd-chip { background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 12px 20px; font-weight: 600; white-space: nowrap; transition: transform .2s, border-color .2s; }
 .gd-chip:hover { transform: translateY(-3px); border-color: var(--primary); }
 
@@ -676,7 +699,7 @@ const CSS = `
 .gd-points li { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 20px; background: rgba(255,255,255,.12); backdrop-filter: blur(4px); font-weight: 500; line-height: 1.5;
   animation: gd-slide .6s cubic-bezier(.2,.8,.2,1) var(--d) both; transition: background .2s, transform .2s; }
 .gd-points li:hover { background: rgba(255,255,255,.2); transform: translateX(6px); }
-.gd-points li span { font-size: 22px; }
+.gd-point-icon { flex: none; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.16); }
 
 /* Preguntas */
 .gd-faq { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; }

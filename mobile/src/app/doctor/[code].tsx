@@ -1,6 +1,7 @@
+import Feather from '@expo/vector-icons/Feather';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { SlotPicker } from '@/components/SlotPicker';
 import { Card, colors, Loading, Muted, Screen, Title } from '@/components/ui';
@@ -98,7 +99,12 @@ export default function DoctorProfile() {
     <Screen>
       <Title>{doctor.profiles.full_name}</Title>
       <Muted>{[doctor.specialty, doctor.city].filter(Boolean).join(' · ')}</Muted>
-      {!!doctor.address && <Muted>📍 {doctor.address}</Muted>}
+      {!!doctor.address && (
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <Feather name="map-pin" size={14} color={colors.muted} />
+          <Muted>{doctor.address}</Muted>
+        </View>
+      )}
       {!!doctor.bio && <Text style={{ fontSize: 15, lineHeight: 21 }}>{doctor.bio}</Text>}
 
       <Card>

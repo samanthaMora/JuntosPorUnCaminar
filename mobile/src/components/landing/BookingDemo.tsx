@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import { useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
@@ -54,7 +55,7 @@ export function BookingDemo() {
 
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
         <View style={styles.avatar}>
-          <Text style={{ fontSize: 24 }}>👩‍⚕️</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: colors.primary }}>AP</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>Dra. Ana Pérez</Text>
@@ -70,7 +71,7 @@ export function BookingDemo() {
           ]}
         >
           <View style={styles.successIcon}>
-            <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800' }}>✓</Text>
+            <Feather name="check" size={32} color="#fff" />
           </View>
           <Text style={styles.name}>¡Cita confirmada!</Text>
           <Text style={[styles.small, { textAlign: 'center' }]}>

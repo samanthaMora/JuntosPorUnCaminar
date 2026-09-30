@@ -12,9 +12,9 @@ export default function PracticeLayout() {
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: colors.primary, headerRight: SignOutButton }}>
-      <Tabs.Screen name="agenda" options={{ title: 'Mi agenda', tabBarIcon: () => <TabIcon emoji="📅" /> }} />
-      <Tabs.Screen name="schedule" options={{ title: 'Horarios', tabBarIcon: () => <TabIcon emoji="⏰" /> }} />
-      <Tabs.Screen name="settings" options={{ title: 'Configuración', tabBarIcon: () => <TabIcon emoji="⚙️" /> }} />
+      <Tabs.Screen name="agenda" options={{ title: 'Mi agenda', tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} /> }} />
+      <Tabs.Screen name="schedule" options={{ title: 'Horarios', tabBarIcon: ({ color }) => <TabIcon name="clock" color={color} /> }} />
+      <Tabs.Screen name="settings" options={{ title: 'Configuración', tabBarIcon: ({ color }) => <TabIcon name="settings" color={color} /> }} />
     </Tabs>
   );
 }
