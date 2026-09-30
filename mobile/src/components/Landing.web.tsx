@@ -1,11 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 
+import { loadWebFonts } from '@/lib/webFonts';
+
 // Portada para web: HTML y CSS directos para poder usar animaciones completas.
 // La app de teléfono usa Landing.tsx.
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
 
 const SPECIALISTS = ['tu pediatra', 'tu dentista', 'tu psicóloga', 'tu nutriólogo', 'tu ginecóloga', 'tu dermatólogo'];
 
@@ -67,14 +66,7 @@ const signUp = (role?: string) => router.push({ pathname: '/sign-up', params: ro
 export function Landing() {
   const scroller = useRef<HTMLDivElement>(null);
 
-  // Tipografías de Google Fonts.
-  useEffect(() => {
-    if (document.querySelector(`link[href="${FONTS_URL}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = FONTS_URL;
-    document.head.appendChild(link);
-  }, []);
+  useEffect(loadWebFonts, []);
 
   // Las secciones aparecen al llegar a ellas con el scroll.
   useEffect(() => {
