@@ -1,7 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, MAX_WIDTH } from '@/components/ui';
 import { fonts } from '@/lib/webFonts';
@@ -10,9 +9,9 @@ export type IconName = ComponentProps<typeof Feather>['name'];
 
 /** Encabezado grande con título en serif, en lugar de la barra de navegación. */
 export function PageHeader({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
-  const insets = useSafeAreaInsets();
+  // El menú de arriba o de al lado ya deja el espacio del área segura.
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 28 }]}>
+    <View style={[styles.header, { paddingTop: 28 }]}>
       <View style={[styles.blob, { width: 280, height: 280, top: -140, right: -80, backgroundColor: colors.primaryLight }]} />
       <View style={[styles.blob, { width: 160, height: 160, top: 10, right: 140, backgroundColor: '#FDEBB8', opacity: 0.6 }]} />
       <View style={styles.headerInner}>
