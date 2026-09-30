@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,8 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
+
+import { fonts } from '@/lib/webFonts';
 
 // Paleta cálida: terracota sobre crema.
 export const colors = {
@@ -94,10 +97,17 @@ export function Button({
 }
 
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <View style={{ gap: 4 }}>
+    <View style={{ gap: 6 }}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor={colors.muted} style={styles.input} {...props} />
+      <TextInput
+        placeholderTextColor="#B5A39A"
+        style={[styles.input, focused && styles.inputFocused]}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...props}
+      />
     </View>
   );
 }
@@ -129,30 +139,38 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  muted: { fontSize: 14, color: colors.muted, lineHeight: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text },
+  title: { fontSize: 26, fontWeight: '700', color: colors.text, fontFamily: fonts.serif, letterSpacing: -0.5 },
+  muted: { fontSize: 14, color: colors.muted, lineHeight: 20, fontFamily: fonts.sans },
+  label: { fontSize: 14, fontWeight: '700', color: colors.text, fontFamily: fonts.sans },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 22,
+    padding: 18,
+    gap: 10,
+    borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: '#7A3A1C',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
   button: { borderRadius: 999, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center' },
   buttonPrimary: { backgroundColor: colors.primary },
   buttonOutline: { borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  buttonText: { fontSize: 16, fontWeight: '700', fontFamily: fonts.sans },
   input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     fontSize: 16,
-    backgroundColor: colors.card,
+    backgroundColor: colors.background,
     color: colors.text,
+    fontFamily: fonts.sans,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
+  inputFocused: { borderColor: colors.primary, backgroundColor: colors.card },
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
@@ -162,7 +180,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   chipSelected: { backgroundColor: colors.primary },
-  chipText: { color: colors.primary, fontWeight: '600' },
+  chipText: { color: colors.primary, fontWeight: '600', fontFamily: fonts.sans },
 });
 
 export function Checkbox({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode }) {
