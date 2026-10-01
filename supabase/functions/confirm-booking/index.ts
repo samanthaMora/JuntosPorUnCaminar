@@ -1,6 +1,6 @@
 // La app la llama justo después de que el paciente paga: pregunta a Stripe si
 // el pago se completó y confirma la cita. Así no depende solo del webhook,
-// que puede tardar o no estar configurado.
+// que puede tardar o no estar configurado. Cada revisión queda en payment_checks.
 import { adminClient, corsHeaders, json, stripe, userClient } from '../_shared/clients.ts';
 import { settlePayment } from '../_shared/connect.ts';
 
@@ -22,14 +22,27 @@ Deno.serve(async (req) => {
   if (!appt?.stripe_payment_intent_id) return json({ error: 'No encontramos la cita' }, 404);
   if (appt.status === 'confirmed') return json({ status: 'confirmed' });
 
+  const log = (outcome: string, intentStatus?: string, error?: string) =>
+    adminClient
+      .from('payment_checks')
+      .insert({ appointment_id, outcome, intent_status: intentStatus ?? null, error: error ?? null });
+
+  let intentStatus: string | undefined;
   try {
     const intent = await stripe.paymentIntents.retrieve(appt.stripe_payment_intent_id);
-    if (intent.status === 'processing') return json({ status: 'processing' });
-    if (intent.status !== 'succeeded') return json({ status: 'unpaid' });
+    intentStatus = intent.status;
+    if (intent.status !== 'succeeded') {
+      const status = intent.status === 'processing' ? 'processing' : 'unpaid';
+      await log(status, intent.status);
+      return json({ status, intent_status: intent.status });
+    }
     const confirmed = await settlePayment(intent.id);
+    await log(confirmed ? 'confirmed' : 'refunded', intent.status);
     return json({ status: confirmed ? 'confirmed' : 'refunded' });
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    await log('error', intentStatus, message);
     return json({ error: 'No se pudo confirmar la cita' }, 502);
   }
 });

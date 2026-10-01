@@ -35,13 +35,25 @@ export default function MyAppointments() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('appointments')
-      .select('*, doctors(public_code, change_cutoff_hours, timezone, profiles(full_name))')
-      .eq('patient_id', session!.user.id)
-      .in('status', ['confirmed', 'cancelled', 'pending_payment'])
-      .order('starts_at', { ascending: false });
-    setRows((data as Row[]) ?? []);
+    const fetchRows = async () => {
+      const { data } = await supabase
+        .from('appointments')
+        .select('*, doctors(public_code, change_cutoff_hours, timezone, profiles(full_name))')
+        .eq('patient_id', session!.user.id)
+        .in('status', ['confirmed', 'cancelled', 'pending_payment'])
+        .order('starts_at', { ascending: false });
+      return (data as Row[]) ?? [];
+    };
+    const first = await fetchRows();
+    setRows(first);
+
+    // Si alguna sigue esperando pago, se revisa con Stripe por si el aviso no llegó.
+    const pending = first.filter((r) => r.status === 'pending_payment');
+    if (pending.length === 0) return;
+    await Promise.all(
+      pending.map((r) => invokeFunction('confirm-booking', { appointment_id: r.id }).catch(() => null)),
+    );
+    setRows(await fetchRows());
   }, [session]);
 
   useFocusEffect(
