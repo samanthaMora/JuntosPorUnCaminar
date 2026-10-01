@@ -4,7 +4,7 @@
 // Desplegar con --no-verify-jwt (Stripe no manda JWT; se valida la firma).
 import Stripe from 'npm:stripe@17';
 import { adminClient, json, stripe } from '../_shared/clients.ts';
-import { refundInFull, syncPayoutAccount } from '../_shared/connect.ts';
+import { settlePayment, syncPayoutAccount } from '../_shared/connect.ts';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 const secrets = [Deno.env.get('STRIPE_WEBHOOK_SECRET'), Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET')].filter(
@@ -29,19 +29,7 @@ Deno.serve(async (req) => {
 
   try {
     if (event.type === 'payment_intent.succeeded') {
-      const intent = event.data.object;
-      const { data: confirmed, error } = await adminClient.rpc('confirm_payment', {
-        p_payment_intent_id: intent.id,
-      });
-      if (error) throw error;
-      if (!confirmed) {
-        // Pagó después de que venció su apartado y alguien más tomó el horario.
-        await refundInFull(intent.id);
-        await adminClient
-          .from('appointments')
-          .update({ refunded_at: new Date().toISOString() })
-          .eq('stripe_payment_intent_id', intent.id);
-      }
+      await settlePayment(event.data.object.id);
     }
 
     if (event.type === 'account.updated') {

@@ -71,6 +71,7 @@ Las reglas importantes viven en la base de datos, no solo en la app: nunca se pu
    supabase functions deploy delete-account
    supabase functions deploy connect-return --no-verify-jwt
    supabase functions deploy stripe-webhook --no-verify-jwt
+   supabase functions deploy confirm-booking
    ```
 4. En Stripe, *Developers → Webhooks*, crea **dos** endpoints con la misma URL `https://TU_PROJECT_REF.supabase.co/functions/v1/stripe-webhook`:
    - *Your account*, evento `payment_intent.succeeded`

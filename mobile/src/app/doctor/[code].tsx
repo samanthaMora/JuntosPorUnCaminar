@@ -78,8 +78,19 @@ export default function DoctorProfile() {
         return;
       }
 
-      // 3. Stripe avisa al servidor y la cita queda confirmada.
-      const confirmed = await waitForConfirmation(booking.appointment_id);
+      // 3. Se confirma con Stripe directamente; si no se puede, se espera al webhook.
+      const check = await invokeFunction<{ status: string }>('confirm-booking', {
+        appointment_id: booking.appointment_id,
+      }).catch(() => null);
+      if (check?.status === 'refunded') {
+        Alert.alert(
+          'Ese horario ya no está disponible',
+          'Alguien más lo apartó mientras pagabas. Te devolvimos el pago completo; elige otro horario.',
+        );
+        setRefreshKey((k) => k + 1);
+        return;
+      }
+      const confirmed = check?.status === 'confirmed' || (await waitForConfirmation(booking.appointment_id));
       Alert.alert(
         confirmed ? '¡Cita confirmada!' : 'Pago recibido',
         confirmed
