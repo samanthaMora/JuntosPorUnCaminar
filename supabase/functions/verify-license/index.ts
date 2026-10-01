@@ -1,10 +1,9 @@
-// Verifica la cédula profesional del doctor en la SEP (vía Kiban) y, si el
-// nombre coincide y la profesión es del área de la salud, la marca como verificada.
+// Verifica la cédula profesional del doctor en la SEP y, si el nombre coincide
+// y la profesión es del área de la salud, la marca como verificada.
 //
-// Secretos:
-//   KIBAN_API_KEY        clave de Kiban
-//   KIBAN_BASE_URL       https://sandbox.link.kiban.com (pruebas) o la URL de producción de Kiban
-//   KIBAN_TEST_CASE_ID   solo en sandbox: caso de prueba a simular
+// Usa el primer servicio que tenga clave configurada:
+//   IDOO_API_KEY         idoo.dev (registro inmediato, plan gratis de 100 consultas/mes)
+//   KIBAN_API_KEY        Kiban; además KIBAN_BASE_URL (producción) o KIBAN_TEST_CASE_ID (sandbox)
 import { adminClient, corsHeaders, json, userClient } from '../_shared/clients.ts';
 
 type SepResult = {
@@ -14,6 +13,14 @@ type SepResult = {
   numeroCedula: string;
   profesion: string;
   institution?: string;
+};
+
+type Lookup = { kind: 'ok'; results: SepResult[] } | { kind: 'unconfigured' } | { kind: 'unavailable' };
+
+type IdooResponse = {
+  valid: boolean;
+  status: number;
+  data: { items: { idProfesionista: string; nombre: string; paterno: string; materno: string; titulo: string }[] } | null;
 };
 
 type KibanResponse = {
@@ -36,6 +43,54 @@ function words(text: string) {
     .replace(/[^A-Z\s]/g, ' ')
     .split(/\s+/)
     .filter((w) => w && !TITLES.has(w));
+}
+
+/** Busca la cédula en el servicio configurado y devuelve los registros de la SEP. */
+async function lookupLicense(number: string): Promise<Lookup> {
+  const idooKey = Deno.env.get('IDOO_API_KEY');
+  if (idooKey) {
+    const res = await fetch('https://api.idoo.dev/v1/consultar-cedula-profesional/', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idooKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cedula: number }),
+    });
+    const body: IdooResponse = await res.json();
+    if (res.status === 404 || (body.valid === false && body.status === 404)) return { kind: 'ok', results: [] };
+    if (!res.ok || !body.valid) {
+      console.error(res.status, body);
+      return { kind: 'unavailable' };
+    }
+    return {
+      kind: 'ok',
+      results: (body.data?.items ?? []).map((i) => ({
+        nombre: [i.nombre, i.paterno, i.materno].filter(Boolean).join(' '),
+        primerApellido: i.paterno,
+        segundoApellido: i.materno,
+        numeroCedula: i.idProfesionista,
+        profesion: i.titulo,
+      })),
+    };
+  }
+
+  const kibanKey = Deno.env.get('KIBAN_API_KEY');
+  if (kibanKey) {
+    const base = Deno.env.get('KIBAN_BASE_URL') ?? 'https://sandbox.link.kiban.com';
+    const testCase = Deno.env.get('KIBAN_TEST_CASE_ID');
+    const res = await fetch(`${base}/api/v2/sep_cedula/validate_by_id${testCase ? `?testCaseId=${testCase}` : ''}`, {
+      method: 'POST',
+      headers: { 'x-api-key': kibanKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idCedula: number }),
+    });
+    const body: KibanResponse = await res.json();
+    if (body.response?.status === 'NOT_FOUND') return { kind: 'ok', results: [] };
+    if (body.status !== 'SUCCESS' || body.response?.status !== 'FOUND') {
+      console.error(body);
+      return { kind: 'unavailable' };
+    }
+    return { kind: 'ok', results: body.response.results ?? [] };
+  }
+
+  return { kind: 'unconfigured' };
 }
 
 /** El primer apellido y al menos un nombre de la SEP deben aparecer en el nombre del doctor. */
@@ -65,33 +120,22 @@ Deno.serve(async (req) => {
   if (doctor.license_verified_at) return json({ status: 'verified' });
   if (!doctor.license_number) return json({ status: 'missing', message: 'Escribe tu número de cédula.' });
 
-  const apiKey = Deno.env.get('KIBAN_API_KEY');
-  if (!apiKey) return json({ status: 'error', message: 'La verificación automática aún no está configurada.' });
-
-  const base = Deno.env.get('KIBAN_BASE_URL') ?? 'https://sandbox.link.kiban.com';
-  const testCase = Deno.env.get('KIBAN_TEST_CASE_ID');
-  const url = `${base}/api/v2/sep_cedula/validate_by_id${testCase ? `?testCaseId=${testCase}` : ''}`;
-
-  let result: KibanResponse;
+  let lookup: Lookup;
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idCedula: doctor.license_number }),
-    });
-    result = await res.json();
+    lookup = await lookupLicense(doctor.license_number);
   } catch (e) {
     console.error(e);
     return json({ status: 'error', message: 'No pudimos consultar la SEP. Intenta de nuevo en unos minutos.' });
   }
-
-  if (result.response?.status === 'UNAVAILABLE' || result.status !== 'SUCCESS') {
-    console.error(result);
+  if (lookup.kind === 'unconfigured') {
+    return json({ status: 'error', message: 'La verificación automática aún no está configurada.' });
+  }
+  if (lookup.kind === 'unavailable') {
     return json({ status: 'error', message: 'El registro de la SEP no está disponible. Intenta de nuevo en unos minutos.' });
   }
 
   const number = doctor.license_number.replace(/^0+/, '');
-  const match = (result.response?.results ?? []).find((r) => r.numeroCedula.replace(/^0+/, '') === number);
+  const match = lookup.results.find((r) => r.numeroCedula.replace(/^0+/, '') === number);
   if (!match) {
     return json({ status: 'rejected', message: 'No encontramos esa cédula en el Registro Nacional de Profesionistas.' });
   }

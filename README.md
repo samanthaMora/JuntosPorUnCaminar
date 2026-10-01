@@ -117,21 +117,24 @@ Las reglas importantes viven en la base de datos, no solo en la app: nunca se pu
 En **iOS** los avisos funcionan en Expo Go. En **Android**, Expo Go ya no soporta push: hace falta un *development build* (`npx eas-cli@latest build --profile development --platform android`). Sin push la app funciona igual; solo no llegan los avisos.
 
 ### 4. Verificar doctores (automático)
-Al guardar su cédula, la función `verify-license` la consulta en el Registro Nacional de Profesionistas de la SEP a través de [Kiban](https://docs.kiban.com/reference/validate-by-number). Se aprueba sola si:
+Al guardar su cédula, la función `verify-license` la consulta en el Registro Nacional de Profesionistas de la SEP. Se aprueba sola si:
 - la cédula existe,
 - el primer apellido y al menos un nombre de la SEP aparecen en el nombre del doctor en la app, y
 - la profesión es del área de la salud (medicina, odontología, psicología, nutrición, etc.).
 
-Si no se cumple, el doctor ve el motivo en *Configuración*. Si cambia su cédula o su nombre, se vuelve a verificar.
+Si no se cumple, el doctor ve el motivo en *Ajustes*. Si cambia su cédula o su nombre, se vuelve a verificar.
 
-Configuración (una sola vez):
-```bash
-supabase secrets set KIBAN_API_KEY=...                        # tu clave de Kiban
-supabase secrets set KIBAN_BASE_URL=https://sandbox.link.kiban.com  # o la URL de producción que te dé Kiban
-supabase secrets set KIBAN_TEST_CASE_ID=681bb9c0d4e2f1a038b7c5e1   # solo en sandbox; bórralo en producción
-supabase db push   # aplica 20260930000000_auto_license_check.sql
-supabase functions deploy verify-license
-```
+La consulta se hace con el primer servicio que tenga clave:
+- **[idoo.dev](https://www.idoo.dev/apis/consultar-cedula-profesional)** (registro inmediato, 100 consultas gratis al mes):
+  ```bash
+  supabase secrets set IDOO_API_KEY=...
+  ```
+- **[Kiban](https://docs.kiban.com/reference/validate-by-number)**:
+  ```bash
+  supabase secrets set KIBAN_API_KEY=...
+  supabase secrets set KIBAN_BASE_URL=...               # URL de producción que te dé Kiban
+  supabase secrets set KIBAN_TEST_CASE_ID=681bb9c0d4e2f1a038b7c5e1   # solo en sandbox
+  ```
 
 Para aprobar a alguien a mano (por ejemplo, si la SEP no responde), en el *SQL Editor*:
 ```sql
