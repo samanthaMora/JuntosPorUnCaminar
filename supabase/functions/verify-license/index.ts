@@ -60,6 +60,17 @@ function words(text: string) {
     .filter((w) => w && !TITLES.has(w));
 }
 
+const DAILY_LIMIT = 5;
+
+type Rejection = 'not_found' | 'name_mismatch' | 'not_health';
+
+const REJECTIONS: Record<Rejection, string> = {
+  not_found: 'No encontramos esa cédula en el Registro Nacional de Profesionistas. Revisa el número.',
+  name_mismatch:
+    'El nombre de tu cuenta no coincide con el del titular de esta cédula. Escribe tu nombre tal como aparece en tu cédula y guarda de nuevo.',
+  not_health: 'Esta cédula no corresponde a una profesión del área de la salud.',
+};
+
 /** Busca la cédula en el servicio configurado y devuelve los registros de la SEP. */
 async function lookupLicense(number: string): Promise<Lookup> {
   const idooKey = Deno.env.get('IDOO_API_KEY');
@@ -140,6 +151,35 @@ Deno.serve(async (req) => {
   if (doctor.license_verified_at) return json({ status: 'verified' });
   if (!doctor.license_number) return json({ status: 'missing', message: 'Escribe tu número de cédula.' });
 
+  const fullName = (doctor.profiles as unknown as { full_name: string }).full_name;
+
+  // Si esta misma cédula con este mismo nombre ya se rechazó, no se vuelve a pagar la consulta.
+  const { data: previous } = await adminClient
+    .from('license_checks')
+    .select('result')
+    .eq('doctor_id', user.id)
+    .eq('license_number', doctor.license_number)
+    .eq('full_name', fullName)
+    .neq('result', 'verified')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (previous) return json({ status: 'rejected', message: REJECTIONS[previous.result as Rejection] });
+
+  // Límite diario: protege el saldo y evita que alguien adivine el nombre del titular.
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await adminClient
+    .from('license_checks')
+    .select('id', { count: 'exact', head: true })
+    .eq('doctor_id', user.id)
+    .gte('created_at', since);
+  if ((count ?? 0) >= DAILY_LIMIT) {
+    return json({
+      status: 'error',
+      message: 'Alcanzaste el límite de verificaciones por hoy. Revisa tus datos e intenta de nuevo mañana.',
+    });
+  }
+
   let lookup: Lookup;
   try {
     lookup = await lookupLicense(doctor.license_number);
@@ -156,25 +196,20 @@ Deno.serve(async (req) => {
 
   const number = doctor.license_number.replace(/^0+/, '');
   const match = lookup.results.find((r) => r.numeroCedula.replace(/^0+/, '') === number);
-  if (!match) {
-    return json({ status: 'rejected', message: 'No encontramos esa cédula en el Registro Nacional de Profesionistas.' });
-  }
+  const profession = match ? words(match.profesion).join(' ') : '';
+  const result: Rejection | 'verified' = !match
+    ? 'not_found'
+    : !nameMatches(fullName, match)
+      ? 'name_mismatch'
+      : !HEALTH.test(profession) || NOT_HUMAN_HEALTH.test(profession)
+        ? 'not_health'
+        : 'verified';
 
-  const fullName = (doctor.profiles as unknown as { full_name: string }).full_name;
-  if (!nameMatches(fullName, match)) {
-    return json({
-      status: 'rejected',
-      message: `La cédula está registrada a nombre de ${match.nombre}. Tu nombre en la app debe coincidir con el de la SEP.`,
-    });
-  }
-
-  const profession = words(match.profesion).join(' ');
-  if (!HEALTH.test(profession) || NOT_HUMAN_HEALTH.test(profession)) {
-    return json({
-      status: 'rejected',
-      message: `La cédula corresponde a "${match.profesion}", que no es una profesión del área de la salud.`,
-    });
-  }
+  await adminClient
+    .from('license_checks')
+    .insert({ doctor_id: user.id, license_number: doctor.license_number, full_name: fullName, result });
+  // Nunca se devuelven los datos del titular: solo si pasó o por qué no.
+  if (result !== 'verified') return json({ status: 'rejected', message: REJECTIONS[result] });
 
   const { error } = await adminClient
     .from('doctors')
@@ -185,5 +220,5 @@ Deno.serve(async (req) => {
     console.error(error);
     return json({ status: 'error', message: 'No se pudo guardar la verificación.' }, 500);
   }
-  return json({ status: 'verified', profession: match.profesion });
+  return json({ status: 'verified' });
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { ActivityIndicator, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Alert } from '@/lib/alert';
 import { AccountActions } from '@/components/AccountActions';
@@ -32,6 +33,8 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
   const [licenseMessage, setLicenseMessage] = useState<string | null>(null);
+  // Lo que está guardado; la verificación siempre usa estos datos.
+  const [saved, setSaved] = useState({ name: '', license: '' });
 
   useEffect(() => {
     supabase
@@ -57,6 +60,7 @@ export default function Settings() {
           license_number: d.license_number,
           license_verified: !!d.license_verified_at,
         });
+        setSaved({ name: profile?.full_name ?? '', license: d.license_number });
       });
   }, [session, profile]);
 
@@ -101,12 +105,17 @@ export default function Settings() {
       return Alert.alert('No se pudo guardar', error.code === '23505' ? 'Ese código ya lo usa otro doctor.' : error.message);
     }
     await refreshProfile();
-    if (license) await verifyLicense();
-    else Alert.alert('Guardado');
+    setSaved({ name: form!.full_name.trim(), license });
+    if (!license) return Alert.alert('Cambios guardados');
+    const result = await verifyLicense();
+    Alert.alert('Cambios guardados', result ?? undefined);
   }
 
-  /** Consulta la cédula en la SEP; si todo coincide queda verificada sola. */
-  async function verifyLicense() {
+  const unsavedIdentity =
+    form.full_name.trim() !== saved.name.trim() || form.license_number.trim() !== saved.license.trim();
+
+  /** Consulta la cédula guardada en la SEP; devuelve el resumen del resultado. */
+  async function verifyLicense(): Promise<string | null> {
     setChecking(true);
     setLicenseMessage(null);
     try {
@@ -114,12 +123,18 @@ export default function Settings() {
       const verified = res.status === 'verified';
       setForm((f) => f && { ...f, license_verified: verified });
       setLicenseMessage(verified ? null : (res.message ?? null));
-      Alert.alert(verified ? 'Guardado. Tu cédula está verificada.' : 'Guardado', verified ? undefined : res.message);
+      return verified ? 'Tu cédula está verificada.' : (res.message ?? null);
     } catch (e) {
       setLicenseMessage((e as Error).message);
+      return (e as Error).message;
     } finally {
       setChecking(false);
     }
+  }
+
+  async function verifyNow() {
+    const result = await verifyLicense();
+    if (result) Alert.alert(result === 'Tu cédula está verificada.' ? 'Cédula verificada' : 'No pudimos verificar tu cédula', result);
   }
 
   return (
@@ -170,20 +185,31 @@ export default function Settings() {
           keyboardType="number-pad"
           maxLength={8}
         />
-        {form.license_verified ? (
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>✓ Cédula verificada</Text>
+        {form.license_verified && !unsavedIdentity ? (
+          <View style={[styles.status, { backgroundColor: '#E3F1E7' }]}>
+            <Feather name="check-circle" size={16} color="#2F6B45" />
+            <Text style={[styles.statusText, { color: '#2F6B45' }]}>Cédula verificada</Text>
+          </View>
         ) : checking ? (
-          <Muted>Consultando el Registro Nacional de Profesionistas…</Muted>
+          <View style={[styles.status, { backgroundColor: colors.background }]}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.statusText}>Consultando el Registro Nacional de Profesionistas…</Text>
+          </View>
         ) : (
           <>
+            {!!licenseMessage && !unsavedIdentity && (
+              <View style={[styles.status, { backgroundColor: '#FEF3D7' }]}>
+                <Feather name="alert-circle" size={16} color="#B7791F" />
+                <Text style={[styles.statusText, { color: '#7A5210' }]}>{licenseMessage}</Text>
+              </View>
+            )}
             <Muted>
-              {licenseMessage ??
-                (form.license_number
-                  ? 'Aún no está verificada. La revisamos en el Registro Nacional de Profesionistas; tu nombre debe coincidir con el de la SEP.'
-                  : 'Obligatoria para aparecer en búsquedas. La verificamos automáticamente en el Registro Nacional de Profesionistas.')}
+              {unsavedIdentity
+                ? 'Guarda tus cambios para verificar tu cédula con tu nombre y número actualizados.'
+                : 'Obligatoria para aparecer en búsquedas. La verificamos automáticamente en el Registro Nacional de Profesionistas; tu nombre debe coincidir con el de tu cédula.'}
             </Muted>
             {!!form.license_number && (
-              <Button title="Verificar ahora" variant="secondary" onPress={verifyLicense} loading={checking} />
+              <Button title="Verificar ahora" variant="secondary" onPress={verifyNow} disabled={unsavedIdentity} />
             )}
           </>
         )}
@@ -197,7 +223,9 @@ export default function Settings() {
           <Switch
             value={form.is_published}
             onValueChange={set('is_published')}
-            trackColor={{ true: colors.primary }}
+            trackColor={{ true: colors.primary, false: colors.border }}
+            thumbColor="#fff"
+            {...({ activeThumbColor: '#fff' } as object)}
           />
         </View>
         <Muted>Los pacientes solo pueden encontrarte y agendar si esto está encendido, tu cédula está verificada y tus cobros están configurados.</Muted>
@@ -209,3 +237,8 @@ export default function Settings() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  status: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 12 },
+  statusText: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.text },
+});

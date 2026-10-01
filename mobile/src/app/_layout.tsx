@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
+import { AlertHost } from '@/components/AlertHost';
 import { PushManager } from '@/components/PushManager';
 import { colors } from '@/components/ui';
 import { AuthProvider } from '@/lib/auth';
@@ -27,6 +28,7 @@ export default function RootLayout() {
           <Stack.Screen name="doctor/[code]" options={{ title: 'Agendar cita' }} />
           <Stack.Screen name="reschedule/[id]" options={{ title: 'Cambiar cita' }} />
         </Stack>
+        <AlertHost />
       </AuthProvider>
     </PaymentsProvider>
   );
