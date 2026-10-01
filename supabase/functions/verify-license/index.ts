@@ -17,10 +17,25 @@ type SepResult = {
 
 type Lookup = { kind: 'ok'; results: SepResult[] } | { kind: 'unconfigured' } | { kind: 'unavailable' };
 
+// La documentación de idoo.dev muestra `data.items` con paterno/materno/titulo,
+// pero la API real responde `data` como lista con primerApellido/segundoApellido/profesion.
+type IdooItem = {
+  cedula?: string;
+  idProfesionista?: string;
+  nombre: string;
+  primerApellido?: string;
+  segundoApellido?: string;
+  paterno?: string;
+  materno?: string;
+  profesion?: string | null;
+  carrera?: string | null;
+  titulo?: string;
+};
+
 type IdooResponse = {
   valid: boolean;
   status: number;
-  data: { items: { idProfesionista: string; nombre: string; paterno: string; materno: string; titulo: string }[] } | null;
+  data: IdooItem[] | { items: IdooItem[] } | null;
 };
 
 type KibanResponse = {
@@ -30,7 +45,7 @@ type KibanResponse = {
 
 // Profesiones que pueden atender pacientes en la app.
 const HEALTH =
-  /(MEDIC|CIRUJAN|ODONTOLOG|DENTIST|ESTOMATOLOG|PSICOLOG|NUTRI|ENFERMER|FISIOTERAP|TERAPIA FISICA|REHABILITA|OPTOMETR|QUIROPRACT|PODOLOG|PEDIATR|GINECOLOG|OBSTETRI|CARDIOLOG|DERMATOLOG|PSIQUIATR|OFTALMOLOG|ORTOPED|TRAUMATOLOG|OTORRINO|NEUROLOG|ANESTESIOLOG|RADIOLOG|UROLOG|ENDOCRINOLOG|GASTROENTEROLOG|ONCOLOG|NEFROLOG|NEUMOLOG|GERIATR|SALUD)/;
+  /(MEDIC|CIRUJAN|ODONTOLOG|DENTIST|ESTOMATOLOG|PSICOLOG|NUTRI|ENFERMER|FISIOTERAP|TERAPIA FISICA|REHABILITA|OPTOMETR|QUIROPRACT|PODOLOG|PEDIATR|GINECOLOG|OBSTETRI|CARDIOLOG|DERMATOLOG|PSIQUIATR|OFTALMOLOG|ORTOPED|TRAUMATOLOG|OTORRINO|NEUROLOG|ANESTESIOLOG|RADIOLOG|RADIODIAGNOST|IMAGENOLOG|UROLOG|ENDOCRINOLOG|GASTROENTEROLOG|ONCOLOG|NEFROLOG|NEUMOLOG|GERIATR|SALUD)/;
 const NOT_HUMAN_HEALTH = /VETERINAR|ZOOTECN/;
 const TITLES = new Set(['DR', 'DRA', 'DOCTOR', 'DOCTORA', 'LIC', 'MTRO', 'MTRA', 'PSIC', 'LN', 'LNC', 'QFB']);
 
@@ -60,15 +75,20 @@ async function lookupLicense(number: string): Promise<Lookup> {
       console.error(res.status, body);
       return { kind: 'unavailable' };
     }
+    const items = Array.isArray(body.data) ? body.data : (body.data?.items ?? []);
     return {
       kind: 'ok',
-      results: (body.data?.items ?? []).map((i) => ({
-        nombre: [i.nombre, i.paterno, i.materno].filter(Boolean).join(' '),
-        primerApellido: i.paterno,
-        segundoApellido: i.materno,
-        numeroCedula: i.idProfesionista,
-        profesion: i.titulo,
-      })),
+      results: items.map((i) => {
+        const first = i.primerApellido ?? i.paterno ?? '';
+        const second = i.segundoApellido ?? i.materno ?? '';
+        return {
+          nombre: [i.nombre, first, second].filter(Boolean).join(' '),
+          primerApellido: first,
+          segundoApellido: second,
+          numeroCedula: i.cedula ?? i.idProfesionista ?? '',
+          profesion: i.profesion ?? i.carrera ?? i.titulo ?? '',
+        };
+      }),
     };
   }
 
