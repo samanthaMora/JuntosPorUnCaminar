@@ -9,6 +9,7 @@ begin
   return new;
 end $$;
 
+drop trigger if exists profiles_reset_license_on_name_change on public.profiles;
 create trigger profiles_reset_license_on_name_change
   after update of full_name on public.profiles
   for each row execute function public.reset_license_on_name_change();
