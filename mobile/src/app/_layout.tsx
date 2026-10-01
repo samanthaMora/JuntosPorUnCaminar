@@ -23,7 +23,8 @@ export default function RootLayout() {
           <Stack.Screen name="(practice)" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ headerShown: false, title: 'Iniciar sesión' }} />
           <Stack.Screen name="sign-up" options={{ headerShown: false, title: 'Crear cuenta' }} />
-          <Stack.Screen name="forgot-password" options={{ title: 'Recuperar contraseña' }} />
+          <Stack.Screen name="forgot-password" options={{ headerShown: false, title: 'Recuperar contraseña' }} />
+          <Stack.Screen name="reset-password" options={{ headerShown: false, title: 'Contraseña nueva' }} />
           <Stack.Screen name="privacy" options={{ title: 'Aviso de privacidad' }} />
           <Stack.Screen name="doctor/[code]" options={{ title: 'Agendar cita' }} />
           <Stack.Screen name="reschedule/[id]" options={{ title: 'Cambiar cita' }} />
